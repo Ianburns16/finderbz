@@ -6,12 +6,13 @@ import { UploadCloud, CheckCircle2 } from 'lucide-react';
 import './onboarding.css';
 import '@/app/auth/auth.css'; // Reuse form styles
 
+type Role = 'tradesman' | 'customer';
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  
-  // Would normally come from auth context
-  const role = 'tradesman'; 
+  // Stored in state so the compiler won't narrow the type to a literal
+  const [role] = useState<Role>('tradesman'); // In production: read from auth context
 
   const handleNext = () => setStep(step + 1);
   const handlePrev = () => setStep(step - 1);

@@ -1,99 +1,84 @@
-/* job-details.css */
-.job-details-container {
-  max-width: 800px;
-  margin: 0 auto;
-}
+/* job-details.css — Mobile-first */
+.job-details-container { }
 
 .back-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   color: var(--text-muted);
   text-decoration: none;
-  margin-bottom: 1.5rem;
-  font-weight: 500;
+  margin-bottom: 1.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-height: 44px;
+  padding: 0;
+  transition: color 0.15s;
 }
+.back-link:hover { color: var(--primary); }
 
-.back-link:hover {
-  color: var(--primary);
-}
-
-.job-header {
-  margin-bottom: 2rem;
-}
+.job-header { margin-bottom: 1.5rem; }
 
 .job-header h1 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.875rem;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
 .meta-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.625rem;
 }
 
 .meta-tag {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.875rem;
 }
 
 .job-section {
   background-color: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .job-section h2 {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.875rem;
+  padding-bottom: 0.625rem;
   border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.5rem;
 }
 
 .photo-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.625rem;
 }
 
 .job-photo {
   width: 100%;
   aspect-ratio: 4/3;
   object-fit: cover;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-sm);
   background-color: var(--border-color);
 }
 
 .action-bar {
   display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-bottom: 1rem;
 }
 
-.btn-secondary {
-  background-color: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  flex: 1;
-  text-align: center;
-}
-
-.btn-secondary:hover {
-  background-color: rgba(37, 99, 235, 0.05);
-}
-
-@media (max-width: 600px) {
-  .action-bar {
-    flex-direction: column;
-  }
+@media (min-width: 480px) {
+  .action-bar { flex-direction: row; }
 }

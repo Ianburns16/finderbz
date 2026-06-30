@@ -1,48 +1,58 @@
-/* directory.css */
+/* directory.css — Mobile-first */
 .directory-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
 }
 
 .directory-title {
-  font-size: 2rem;
+  font-size: 1.6rem;
+  font-weight: 800;
   margin: 0;
+  letter-spacing: -0.03em;
 }
 
 .directory-subtitle {
   color: var(--text-muted);
   margin-top: 0.25rem;
+  font-size: 0.9rem;
 }
 
+/* Horizontal scrolling chip filter */
 .filters-bar {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
   overflow-x: auto;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.filters-bar::-webkit-scrollbar { display: none; }
 
 .filter-btn {
   background-color: var(--surface);
-  border: 1px solid var(--border-color);
-  padding: 0.5rem 1.25rem;
+  border: 1.5px solid var(--border-color);
+  padding: 0.5rem 1rem;
   border-radius: 9999px;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.85rem;
   color: var(--text-muted);
   white-space: nowrap;
-  transition: all 0.2s ease;
+  min-height: 38px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
-
 .filter-btn:hover {
-  background-color: rgba(37, 99, 235, 0.05);
+  border-color: var(--primary);
   color: var(--primary);
-  border-color: var(--primary);
 }
-
 .filter-btn.active {
-  background-color: var(--primary);
+  background: linear-gradient(to right, var(--primary), #6366f1);
   color: white;
-  border-color: var(--primary);
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
 }
