@@ -1,0 +1,100 @@
+/* onboarding.css */
+.onboarding-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background-color: var(--bg-color);
+}
+
+.onboarding-card {
+  width: 100%;
+  max-width: 600px;
+  background-color: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.onboarding-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.step-dot.active {
+  background-color: var(--primary);
+  width: 20px;
+  border-radius: 9999px;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-row > * {
+  flex: 1;
+}
+
+textarea.form-input {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.upload-box {
+  border: 2px dashed var(--border-color);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upload-box:hover {
+  border-color: var(--primary);
+  background-color: rgba(37,99,235,0.05);
+}
+
+.upload-box svg {
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+}
+
+.terms-box {
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.terms-box h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.terms-box h3:first-child {
+  margin-top: 0;
+}

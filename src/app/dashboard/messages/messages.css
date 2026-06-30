@@ -1,0 +1,224 @@
+/* messages.css */
+.messages-list-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message-thread-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.message-thread-card:hover {
+  background-color: rgba(37, 99, 235, 0.05);
+  border-color: var(--primary);
+}
+
+.thread-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.thread-details {
+  flex: 1;
+  overflow: hidden;
+}
+
+.thread-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.thread-name {
+  font-weight: 600;
+  margin: 0;
+}
+
+.thread-time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.thread-preview {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thread-job {
+  font-size: 0.8rem;
+  color: var(--primary);
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.unread-badge {
+  background-color: var(--error);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+}
+
+/* Chat View */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 140px); /* Account for headers/footers */
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .chat-container {
+    height: calc(100vh - 160px);
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    margin: -1rem; /* Negate dashboard padding */
+  }
+}
+
+.chat-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--surface);
+}
+
+.chat-title-area h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.chat-title-area p {
+  font-size: 0.85rem;
+  color: var(--primary);
+  margin: 0;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background-color: var(--bg-color);
+}
+
+.chat-bubble {
+  max-width: 75%;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.chat-bubble.received {
+  align-self: flex-start;
+  background-color: var(--surface);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 0.25rem;
+}
+
+.chat-bubble.sent {
+  align-self: flex-end;
+  background-color: var(--primary);
+  color: white;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.quote-bubble {
+  align-self: center;
+  width: 100%;
+  max-width: 400px;
+  background-color: var(--surface);
+  border: 2px solid var(--primary);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.quote-amount {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--text-main);
+  margin: 0.5rem 0;
+}
+
+.chat-input-area {
+  padding: 1rem;
+  background-color: var(--surface);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: inherit;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.chat-send-btn {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.chat-send-btn:active {
+  transform: scale(0.95);
+}

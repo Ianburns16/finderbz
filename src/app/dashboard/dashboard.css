@@ -1,0 +1,179 @@
+/* dashboard.css */
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.dashboard-sidebar {
+  display: none; /* Hidden on mobile by default */
+}
+
+.dashboard-main {
+  flex: 1;
+  background-color: var(--bg-color);
+  overflow-y: auto;
+  padding-bottom: 70px; /* Space for bottom nav */
+}
+
+.dashboard-header {
+  height: 60px;
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mobile-brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(to right, var(--primary), #8b5cf6);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.user-profile-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.dashboard-content {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Bottom Navigation for Mobile */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 65px;
+  background-color: var(--surface);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 20;
+  padding-bottom: env(safe-area-inset-bottom); /* iOS support */
+}
+
+.bottom-nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-decoration: none;
+  flex: 1;
+  padding: 0.5rem 0;
+}
+
+.bottom-nav-link.active {
+  color: var(--primary);
+}
+
+.bottom-nav-link svg {
+  transition: transform 0.2s ease;
+}
+
+.bottom-nav-link.active svg {
+  transform: translateY(-2px);
+}
+
+/* Desktop override */
+@media (min-width: 768px) {
+  .dashboard-layout {
+    flex-direction: row;
+  }
+  
+  .dashboard-sidebar {
+    display: flex;
+    width: 250px;
+    background-color: var(--surface);
+    border-right: 1px solid var(--border-color);
+    padding: 1.5rem 1rem;
+    flex-direction: column;
+  }
+
+  .sidebar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(to right, var(--primary), #8b5cf6);
+    -webkit-background-clip: text;
+    color: transparent;
+    margin-bottom: 2rem;
+    padding: 0 0.5rem;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-muted);
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .nav-link:hover {
+    background-color: rgba(37, 99, 235, 0.05);
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  .nav-link.active {
+    background-color: rgba(37, 99, 235, 0.1);
+    color: var(--primary);
+  }
+
+  .bottom-nav {
+    display: none;
+  }
+
+  .dashboard-main {
+    padding-bottom: 0;
+  }
+
+  .mobile-brand {
+    display: none;
+  }
+  
+  .dashboard-header {
+    justify-content: flex-end;
+    padding: 0 2rem;
+  }
+
+  .dashboard-content {
+    padding: 2rem;
+  }
+}
