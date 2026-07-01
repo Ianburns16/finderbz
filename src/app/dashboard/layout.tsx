@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, Briefcase, MessageSquare, Settings } from 'lucide-react';
+import { Users, Briefcase, MessageSquare, Settings, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import './dashboard.css';
 
@@ -30,6 +30,11 @@ export default function DashboardLayout({
     ? (user.user_metadata.full_name as string).split(' ').map((n: string) => n[0]).join('')
     : (user?.email?.[0]?.toUpperCase() as string) || 'U';
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/auth';
+  };
+
   const NAV_ITEMS = [
     { name: 'Directory', href: '/dashboard/directory', icon: <Users size={20} /> },
     { name: 'Job Board', href: '/dashboard/jobs', icon: <Briefcase size={20} /> },
@@ -53,6 +58,14 @@ export default function DashboardLayout({
               {item.name}
             </Link>
           ))}
+          <button
+            onClick={handleSignOut}
+            className="nav-link"
+            style={{ marginTop: 'auto', background: 'none', border: 'none', width: '100%', cursor: 'pointer' }}
+          >
+            <LogOut size={20} />
+            Sign Out
+          </button>
         </nav>
       </aside>
 

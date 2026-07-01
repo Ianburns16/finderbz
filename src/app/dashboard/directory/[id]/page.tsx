@@ -16,7 +16,7 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select(`
           *,
@@ -85,7 +85,7 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
             <p className="profile-bio">{profile.bio}</p>
 
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-              {profile.skills.map(skill => (
+              {profile.skills.map((skill: string) => (
                 <span key={skill} className="skill-tag">{skill}</span>
               ))}
             </div>
@@ -99,7 +99,7 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
 
       <h2 className="section-title"><Briefcase size={24} color="var(--primary)" /> Pre-Priced Services</h2>
       <div className="gigs-grid">
-        {profile.gigs.map(gig => (
+        {profile.gigs.map((gig: any) => (
           <div key={gig.id} className="gig-card">
             <div style={{ position: 'relative', height: '200px', width: '100%' }}>
               <Image src={gig.image} alt={gig.title} fill style={{ objectFit: 'cover', borderRadius: 'var(--radius-md) var(--radius-md) 0 0' }} />
@@ -117,7 +117,7 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
 
       <h2 className="section-title"><Wrench size={24} color="var(--primary)" /> Past Work Portfolio</h2>
       <div className="portfolio-grid">
-        {profile.portfolio.map((img, i) => (
+        {profile.portfolio.map((img: string, i: number) => (
           <div key={i} style={{ position: 'relative', height: '250px', width: '100%' }}>
             <Image src={img} alt={`Portfolio ${i}`} fill style={{ objectFit: 'cover', borderRadius: 'var(--radius-md)' }} />
           </div>
@@ -129,7 +129,7 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', color: 'var(--text-muted)' }}>
           <span style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-main)' }}>{profile.rating}</span>
           <div style={{ display: 'flex', color: '#fbbf24' }}>
-            {[...Array(5)].map((_, i) => <Star key={i} size={20} fill="currentColor" />)}
+            {[...Array(5)].map((_, i: number) => <Star key={i} size={20} fill="currentColor" />)}
           </div>
         </div>
 
@@ -142,7 +142,7 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
             <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>2 weeks ago</span>
           </div>
           <div style={{ display: 'flex', color: '#fbbf24', marginBottom: '0.5rem' }}>
-            {[...Array(5)].map((_, i) => <Star key={i} size={14} fill="currentColor" />)}
+            {[...Array(5)].map((_, i: number) => <Star key={i} size={14} fill="currentColor" />)}
           </div>
           <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.95rem' }}>Michael was extremely professional. He quickly diagnosed the issue with our AC wiring and fixed it within the hour. Highly recommended!</p>
         </div>

@@ -12,11 +12,18 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params);
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    checkUser();
     const fetchJob = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('jobs')
         .select(`
           *,
@@ -42,8 +49,59 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
     fetchJob();
   }, [id, supabase]);
 
+  const handleClaimJob = async () => {
+    if (!user) return;
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({
+          status: 'claimed',
+          tradesman_id: user.id
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Send automated message
+      await supabase.from('messages').insert([{
+        job_id: id,
+        sender_id: user.id,
+        receiver_id: job.customer_id,
+        content: "I've claimed this job and would like to discuss the details with you!"
+      }]);
+
+  setJob((prev: any) => ({ ...prev, status: 'claimed', tradesman_id: user.id }));
+    } catch (err: any) {
+      alert(err.message || 'Failed to claim job');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (newStatus: string) => {
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      setJob((prev: any) => ({ ...prev, status: newStatus }));
+    } catch (err: any) {
+      alert(err.message || 'Failed to update status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) return <div style={{ padding: '3rem', textAlign: 'center' }}>Loading job details...</div>;
   if (!job) return <div style={{ padding: '3rem', textAlign: 'center' }}>Job not found</div>;
+
+  const isCustomer = user?.id === job.customer_id;
+  const isTradesman = user?.user_metadata?.role === 'tradesman';
+  const isAssignedTradesman = user?.id === job.tradesman_id;
 
   return (
     <div className="job-details-container">
@@ -117,10 +175,58 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <div className="action-bar">
-        <Link href={`/dashboard/messages/1?jobId=${job.id}`} className="btn-primary" style={{ flex: 2, textAlign: 'center' }}>
-          Claim Job & Message Customer
-        </Link>
-        <button className="btn-secondary">Save for Later</button>
+        {job.status === 'open' && isTradesman && (
+          <button
+            className="btn-primary"
+            style={{ flex: 2 }}
+            onClick={handleClaimJob}
+            disabled={actionLoading}
+          >
+            {actionLoading ? 'Claiming...' : 'Claim Job & Message Customer'}
+          </button>
+        )}
+
+        {job.status === 'claimed' && isAssignedTradesman && (
+          <button
+            className="btn-primary"
+            style={{ flex: 2 }}
+            onClick={() => handleUpdateStatus('in_progress')}
+            disabled={actionLoading}
+          >
+            {actionLoading ? 'Updating...' : 'Start Job'}
+          </button>
+        )}
+
+        {job.status === 'in_progress' && isAssignedTradesman && (
+          <button
+            className="btn-primary"
+            style={{ flex: 2 }}
+            onClick={() => handleUpdateStatus('completed')}
+            disabled={actionLoading}
+          >
+            {actionLoading ? 'Updating...' : 'Mark as Completed'}
+          </button>
+        )}
+
+        {job.status === 'completed' && isCustomer && (
+          <button
+            className="btn-primary"
+            style={{ flex: 2, backgroundColor: 'var(--success)' }}
+            disabled
+          >
+            Job Completed
+          </button>
+        )}
+
+        {job.status !== 'open' && (
+          <Link
+            href={`/dashboard/messages/${job.id}-${isCustomer ? job.tradesman_id : job.customer_id}`}
+            className="btn-secondary"
+            style={{ flex: 1, textAlign: 'center' }}
+          >
+            Message {isCustomer ? 'Pro' : 'Customer'}
+          </Link>
+        )}
       </div>
     </div>
   );

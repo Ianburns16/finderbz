@@ -1,12 +1,105 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Shield, Bell, CreditCard, LogOut } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import './settings.css';
 import '@/app/auth/auth.css'; // Reusing form classes
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    phone_number: '',
+    district: '',
+    bio: ''
+  });
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profileData) {
+          setFormData({
+            full_name: user.user_metadata.full_name || '',
+            phone_number: user.user_metadata.phone_number || '',
+            district: profileData.district || '',
+            bio: profileData.bio || ''
+          });
+
+          // Fetch transactions
+          const { data: transData } = await supabase
+            .from('transactions')
+            .select('*, jobs(title)')
+            .or(`customer_id.eq.${user.id},tradesman_id.eq.${user.id}`)
+            .order('created_at', { ascending: false });
+
+          if (transData) {
+            setTransactions(transData);
+          }
+        }
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, [supabase]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/auth';
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setSaving(true);
+
+    try {
+      // 1. Update Auth Metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          full_name: formData.full_name,
+          phone_number: formData.phone_number
+        }
+      });
+      if (authError) throw authError;
+
+      // 2. Update users table
+      await supabase.from('users').update({
+        full_name: formData.full_name,
+        phone_number: formData.phone_number
+      }).eq('id', user.id);
+
+      // 3. Update profiles table
+      const { error: profileError } = await supabase.from('profiles').update({
+        district: formData.district,
+        bio: formData.bio
+      }).eq('user_id', user.id);
+
+      if (profileError) throw profileError;
+
+      alert('Profile updated successfully!');
+    } catch (err: any) {
+      alert(err.message || 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div style={{ padding: '3rem', textAlign: 'center' }}>Loading settings...</div>;
 
   return (
     <div className="settings-container">
@@ -36,18 +129,58 @@ export default function SettingsPage() {
           <div className="form-row">
             <div className="form-group">
               <label>Full Name</label>
-              <input type="text" className="form-input" defaultValue="John Doe" />
+              <input
+                type="text"
+                className="form-input"
+                value={formData.full_name}
+                onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+              />
             </div>
             <div className="form-group">
               <label>Phone Number (WhatsApp)</label>
-              <input type="tel" className="form-input" defaultValue="+501 600-0000" />
+              <input
+                type="tel"
+                className="form-input"
+                value={formData.phone_number}
+                onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
+              />
             </div>
           </div>
           <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-            <label>Email Address</label>
-            <input type="email" className="form-input" defaultValue="john@example.com" disabled style={{ backgroundColor: 'var(--bg-color)', opacity: 0.7 }} />
+            <label>District</label>
+            <select
+              className="form-input"
+              value={formData.district}
+              onChange={(e) => setFormData({...formData, district: e.target.value})}
+            >
+              <option value="Belize">Belize District</option>
+              <option value="Cayo">Cayo District</option>
+              <option value="Corozal">Corozal District</option>
+              <option value="Orange Walk">Orange Walk District</option>
+              <option value="Stann Creek">Stann Creek District</option>
+              <option value="Toledo">Toledo District</option>
+            </select>
           </div>
-          <button className="btn-primary">Save Changes</button>
+          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+            <label>Bio</label>
+            <textarea
+              className="form-input"
+              value={formData.bio}
+              onChange={(e) => setFormData({...formData, bio: e.target.value})}
+              style={{ minHeight: '100px' }}
+            />
+          </div>
+          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+            <label>Email Address</label>
+            <input type="email" className="form-input" value={user?.email || ''} disabled style={{ backgroundColor: 'var(--bg-color)', opacity: 0.7 }} />
+          </div>
+          <button
+            className="btn-primary"
+            onClick={handleSaveProfile}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
         </div>
       )}
 
@@ -100,12 +233,36 @@ export default function SettingsPage() {
           </div>
 
           <h3 style={{ marginBottom: '1rem' }}>Payout Method</h3>
-          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+          <div className="form-group" style={{ marginBottom: '2rem' }}>
             <select className="form-input">
-              <option>e-Kyash (Wallet: +501 600-0000)</option>
-              <option>DigiWallet (Wallet: +501 600-0000)</option>
+              <option>e-Kyash (Wallet: {user?.user_metadata?.phone_number || '+501 600-0000'})</option>
+              <option>DigiWallet (Wallet: {user?.user_metadata?.phone_number || '+501 600-0000'})</option>
               <option>Bank Transfer (Belize Bank)</option>
             </select>
+          </div>
+
+          <h3 style={{ marginBottom: '1rem' }}>Transaction History</h3>
+          <div className="transactions-list">
+            {transactions.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1rem', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                No transactions recorded yet.
+              </p>
+            ) : (
+              transactions.map(t => (
+                <div key={t.id} style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontWeight: 600, margin: 0 }}>{t.jobs?.title || 'Payment'}</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>{new Date(t.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontWeight: 700, margin: 0, color: t.status === 'released' ? 'var(--success)' : 'var(--primary)' }}>
+                      {t.tradesman_id === user?.id ? '+' : '-'}${t.amount} BZD
+                    </p>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase' }}>{t.status}</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -130,7 +287,11 @@ export default function SettingsPage() {
       )}
 
       <div style={{ marginTop: '3rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-        <button className="btn-secondary" style={{ color: 'var(--error)', borderColor: 'var(--error)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <button
+          onClick={handleSignOut}
+          className="btn-secondary"
+          style={{ color: 'var(--error)', borderColor: 'var(--error)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+        >
           <LogOut size={16} /> Sign Out
         </button>
       </div>

@@ -19,12 +19,17 @@ const MOCK_JOBS = [
 
 export default function JobsPage() {
   const [activeCategory, setActiveCategory] = useState('All');
+  const [activeTab, setActiveTab] = useState('all'); // 'all', 'my_jobs'
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   const supabase = createClient();
 
   useEffect(() => {
-    const fetchJobs = async () => {
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+
       const { data } = await supabase
         .from('jobs')
         .select('*')
@@ -36,14 +41,21 @@ export default function JobsPage() {
       setLoading(false);
     };
 
-    fetchJobs();
+    fetchData();
   }, [supabase]);
 
   const displayJobs = jobs.length > 0 ? jobs : MOCK_JOBS;
 
-  const filteredJobs = activeCategory === 'All' 
-    ? displayJobs
-    : displayJobs.filter(j => j.category === activeCategory);
+  const filteredJobs = displayJobs.filter(j => {
+    const matchesCategory = activeCategory === 'All' || j.category === activeCategory;
+
+    if (activeTab === 'my_jobs' && user) {
+      const isMyJob = j.customer_id === user.id || j.tradesman_id === user.id;
+      return matchesCategory && isMyJob;
+    }
+
+    return matchesCategory;
+  });
 
   return (
     <div>
@@ -53,6 +65,21 @@ export default function JobsPage() {
           <p className="directory-subtitle">Find local requests and submit your quotes.</p>
         </div>
         <Link href="/dashboard/jobs/new" className="btn-primary">Post a New Job</Link>
+      </div>
+
+      <div className="filters-bar" style={{ marginBottom: '1rem' }}>
+        <button
+          className={`filter-btn ${activeTab === 'all' ? 'active' : ''}`}
+          onClick={() => setActiveTab('all')}
+        >
+          All Jobs
+        </button>
+        <button
+          className={`filter-btn ${activeTab === 'my_jobs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('my_jobs')}
+        >
+          My Jobs
+        </button>
       </div>
 
       <div className="filters-bar">
@@ -96,12 +123,14 @@ export default function JobsPage() {
           {filteredJobs.map(job => (
             <JobCard
               key={job.id}
-            title={job.title}
-            category={job.category}
-            budget={job.budget}
-            district={job.district}
+              id={job.id}
+              title={job.title}
+              category={job.category}
+              budget={job.budget || job.budget_range}
+              district={job.district}
               description={job.description}
               postedAt={job.created_at ? new Date(job.created_at as string).toLocaleDateString() : (job as any).postedAt}
+              status={job.status}
             />
           ))}
         </div>

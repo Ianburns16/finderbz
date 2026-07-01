@@ -56,6 +56,14 @@ export default function MessageThreadPage() {
 
       if (msgData) {
         setMessages(msgData);
+        // Mark as read
+        const unreadMsgs = msgData.filter(m => !m.is_read && m.receiver_id === currentUser.id);
+        if (unreadMsgs.length > 0) {
+          await supabase
+            .from('messages')
+            .update({ is_read: true })
+            .in('id', unreadMsgs.map(m => m.id));
+        }
       }
       setLoading(false);
     };
@@ -73,7 +81,15 @@ export default function MessageThreadPage() {
         const newMsg = payload.new;
         if ((newMsg.sender_id === otherId && newMsg.receiver_id === user?.id) ||
             (newMsg.sender_id === user?.id && newMsg.receiver_id === otherId)) {
-          setMessages(prev => [...prev, newMsg]);
+          setMessages(prev => {
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+
+          // Mark as read if it's for me
+          if (newMsg.receiver_id === user?.id) {
+            supabase.from('messages').update({ is_read: true }).eq('id', newMsg.id).then();
+          }
         }
       })
       .subscribe();
@@ -89,25 +105,28 @@ export default function MessageThreadPage() {
     }
   }, [messages]);
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !user || !otherId || !jobId) return;
+  const handleSend = async (e?: React.FormEvent, overrideContent?: string) => {
+    e?.preventDefault();
+    const contentToSend = overrideContent || newMessage;
+    if (!contentToSend.trim() || !user || !otherId || !jobId) return;
 
-    const msgContent = newMessage;
-    setNewMessage(''); // Clear input immediately for UX
+    if (!overrideContent) setNewMessage(''); // Clear input immediately for UX
 
     const { data, error } = await supabase.from('messages').insert([{
       job_id: jobId,
       sender_id: user.id,
       receiver_id: otherId,
-      content: msgContent,
+      content: contentToSend,
     }]).select().single();
 
     if (error) {
       console.error('Error sending message:', error);
       alert('Failed to send message');
     } else if (data) {
-      setMessages(prev => [...prev, data]);
+      setMessages(prev => {
+        if (prev.some(m => m.id === data.id)) return prev;
+        return [...prev, data];
+      });
     }
   };
 
@@ -134,7 +153,7 @@ export default function MessageThreadPage() {
               onClick={() => {
                 const quote = prompt('Enter your quote amount (e.g. $100):');
                 if (quote) {
-                  setNewMessage(`I would like to offer a quote of ${quote} for this job.`);
+                  handleSend(undefined, `I would like to offer a quote of ${quote} for this job.`);
                 }
               }}
             >
