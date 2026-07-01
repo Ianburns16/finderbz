@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { JobCard } from '@/components/JobCard';
 import Link from 'next/link';
+import { Briefcase } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import '../directory/directory.css'; // Reuse filter styles
 
@@ -67,7 +68,29 @@ export default function JobsPage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem' }}>Loading jobs...</div>
+        <div className="card-grid">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="card" style={{ height: '220px', display: 'flex', flexDirection: 'column', gap: '1rem', opacity: 0.6, borderLeft: '4px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ height: '1.2rem', width: '60%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
+                <div style={{ height: '1.2rem', width: '20%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ height: '0.8rem', width: '30%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
+                <div style={{ height: '0.8rem', width: '30%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
+              </div>
+              <div style={{ flex: 1, backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
+              <div style={{ height: '3rem', width: '100%', backgroundColor: 'var(--border-color)', borderRadius: 'var(--radius-md)' }}></div>
+            </div>
+          ))}
+        </div>
+      ) : filteredJobs.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+          <Briefcase size={48} style={{ color: 'var(--text-muted)', marginBottom: '1rem', opacity: 0.5 }} />
+          <h3>No jobs found</h3>
+          <p style={{ color: 'var(--text-muted)' }}>There are currently no active job requests in this category.</p>
+          <Link href="/dashboard/jobs/new" className="btn-primary" style={{ marginTop: '1.5rem' }}>Post the First Job</Link>
+        </div>
       ) : (
         <div className="card-grid">
           {filteredJobs.map(job => (

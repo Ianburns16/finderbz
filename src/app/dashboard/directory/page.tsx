@@ -99,7 +99,28 @@ export default function DirectoryPage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem' }}>Loading directory...</div>
+        <div className="card-grid">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="card" style={{ height: '200px', display: 'flex', flexDirection: 'column', gap: '1rem', opacity: 0.6 }}>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'var(--border-color)' }}></div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ height: '1.2rem', width: '60%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
+                  <div style={{ height: '0.8rem', width: '40%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
+                </div>
+              </div>
+              <div style={{ height: '2rem', width: '100%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
+              <div style={{ height: '3rem', width: '100%', backgroundColor: 'var(--border-color)', borderRadius: 'var(--radius-md)' }}></div>
+            </div>
+          ))}
+        </div>
+      ) : filteredTradesmen.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', backgroundColor: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+          <Search size={48} style={{ color: 'var(--text-muted)', marginBottom: '1rem', opacity: 0.5 }} />
+          <h3>No matching professionals found</h3>
+          <p style={{ color: 'var(--text-muted)' }}>Try adjusting your search or category filters.</p>
+          <button className="btn-secondary" style={{ marginTop: '1.5rem' }} onClick={() => { setSearchQuery(''); setActiveCategory('All'); }}>Clear All Filters</button>
+        </div>
       ) : (
         <div className="card-grid">
           {filteredTradesmen.map(tradesman => (
