@@ -11,29 +11,77 @@ import { User } from '@supabase/supabase-js';
 
 export default function MessageThreadPage() {
   const params = useParams();
-  const id = params.id;
+  const id = params.id as string; // Virtual thread ID: jobId-otherParticipantId
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [otherUser, setOtherUser] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
+  const [jobId, otherId] = id.includes('-') ? id.split('-') : [null, null];
+
   useEffect(() => {
     const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
 
-      // Mock initial messages for demo purposes if no database data yet
-      setMessages([
-        { id: 1, sender_id: 'other', content: 'Hi there! I saw your post about the leaking pipe.', created_at: new Date(Date.now() - 3600000).toISOString() },
-        { id: 2, sender_id: user?.id, content: 'Yes, it is under the kitchen sink. Can you come today?', created_at: new Date(Date.now() - 1800000).toISOString() },
-        { id: 3, sender_id: 'other', content: 'I can be there around 2 PM. My quote is $60.', created_at: new Date(Date.now() - 600000).toISOString() },
-      ]);
+      if (!currentUser || !jobId || !otherId) {
+        setLoading(false);
+        return;
+      }
+
+      // 1. Fetch other user's info
+      const { data: otherData } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', otherId)
+        .single();
+
+      if (otherData) {
+        setOtherUser({
+          ...otherData,
+          initials: otherData.full_name?.split(' ').map((n: string) => n[0]).join('') || 'U'
+        });
+      }
+
+      // 2. Fetch actual messages
+      const { data: msgData } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('job_id', jobId)
+        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${currentUser.id})`)
+        .order('created_at', { ascending: true });
+
+      if (msgData) {
+        setMessages(msgData);
+      }
+      setLoading(false);
     };
     setup();
-  }, [supabase]);
+
+    // 3. Setup real-time subscription
+    const channel = supabase
+      .channel('realtime:messages')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `job_id=eq.${jobId}`
+      }, (payload) => {
+        const newMsg = payload.new;
+        if ((newMsg.sender_id === otherId && newMsg.receiver_id === user?.id) ||
+            (newMsg.sender_id === user?.id && newMsg.receiver_id === otherId)) {
+          setMessages(prev => [...prev, newMsg]);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, jobId, otherId, user?.id]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -41,19 +89,26 @@ export default function MessageThreadPage() {
     }
   }, [messages]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !user || !otherId || !jobId) return;
 
-    const msg = {
-      id: Date.now(),
-      sender_id: user?.id,
-      content: newMessage,
-      created_at: new Date().toISOString()
-    };
+    const msgContent = newMessage;
+    setNewMessage(''); // Clear input immediately for UX
 
-    setMessages([...messages, msg]);
-    setNewMessage('');
+    const { data, error } = await supabase.from('messages').insert([{
+      job_id: jobId,
+      sender_id: user.id,
+      receiver_id: otherId,
+      content: msgContent,
+    }]).select().single();
+
+    if (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message');
+    } else if (data) {
+      setMessages(prev => [...prev, data]);
+    }
   };
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading conversation...</div>;
@@ -65,13 +120,27 @@ export default function MessageThreadPage() {
           <ArrowLeft size={20} />
         </Link>
         <div className="thread-user-info">
-          <div className="thread-avatar">JD</div>
+          <div className="thread-avatar">{otherUser?.initials || 'U'}</div>
           <div>
-            <h3>John Doe</h3>
+            <h3>{otherUser?.full_name || 'Anonymous User'}</h3>
             <p>Active now</p>
           </div>
         </div>
         <div className="thread-actions">
+          {user?.user_metadata?.role === 'tradesman' && (
+            <button
+              className="btn-primary"
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', minHeight: 'auto' }}
+              onClick={() => {
+                const quote = prompt('Enter your quote amount (e.g. $100):');
+                if (quote) {
+                  setNewMessage(`I would like to offer a quote of ${quote} for this job.`);
+                }
+              }}
+            >
+              Send Quote
+            </button>
+          )}
           <button title="Call"><Phone size={20} /></button>
           <button title="Info"><Info size={20} /></button>
         </div>

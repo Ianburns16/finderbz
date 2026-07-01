@@ -1,32 +1,49 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, CheckCircle2, ShieldCheck, Star } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import '@/components/components.css';
 import './job-details.css';
 
 export default function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const [job, setJob] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
-  const job = {
-    id,
-    title: 'Fix Leaking Pipe under Sink',
-    category: 'Plumbing',
-    budget: '$50 - $100',
-    district: 'Belize City',
-    description: 'The PVC pipe right under the kitchen sink trap has a significant crack and is leaking water whenever the tap runs. I need someone to come out and either patch it or replace the P-trap section entirely. I am available all day today.',
-    postedAt: '2 hours ago',
-    status: 'open',
-    customerName: 'Jane D.',
-    customerJobs: 12,
-    customerRating: 4.9,
-    photos: [
-      'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&q=80&w=300&h=200',
-      'https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?auto=format&fit=crop&q=80&w=300&h=200'
-    ]
-  };
+  useEffect(() => {
+    const fetchJob = async () => {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`
+          *,
+          users!customer_id (
+            full_name
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (data) {
+        setJob({
+          ...data,
+          customerName: data.users?.full_name || 'Anonymous User',
+          customerJobs: 12,
+          customerRating: 4.9,
+          postedAt: new Date(data.created_at).toLocaleDateString()
+        });
+      }
+      setLoading(false);
+    };
+
+    fetchJob();
+  }, [id, supabase]);
+
+  if (loading) return <div style={{ padding: '3rem', textAlign: 'center' }}>Loading job details...</div>;
+  if (!job) return <div style={{ padding: '3rem', textAlign: 'center' }}>Job not found</div>;
 
   return (
     <div className="job-details-container">
@@ -87,11 +104,15 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
       <div className="job-section">
         <h2>Photos of the Problem</h2>
         <div className="photo-gallery">
-          {job.photos.map((url, index) => (
-            <div key={index} style={{ position: 'relative', height: '200px', width: '300px' }}>
-              <Image src={url} alt={`Job photo ${index + 1}`} fill style={{ objectFit: 'cover', borderRadius: 'var(--radius-md)' }} />
-            </div>
-          ))}
+          {job.photos && job.photos.length > 0 ? (
+            job.photos.map((url: string, index: number) => (
+              <div key={index} style={{ position: 'relative', height: '200px', width: '300px' }}>
+                <Image src={url} alt={`Job photo ${index + 1}`} fill style={{ objectFit: 'cover', borderRadius: 'var(--radius-md)' }} />
+              </div>
+            ))
+          ) : (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No photos uploaded for this job.</p>
+          )}
         </div>
       </div>
 

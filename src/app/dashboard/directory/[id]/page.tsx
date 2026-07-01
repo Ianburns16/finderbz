@@ -1,38 +1,55 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, MapPin, Star, CheckCircle2, ShieldCheck, Wrench, MessageSquare, Briefcase } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import './profile.css';
 import '@/components/components.css';
 
 export default function TradesmanProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
-  // Mock data for the Fiverr-style profile
-  const profile = {
-    id,
-    name: 'Michael Chen',
-    initials: 'MC',
-    district: 'Belmopan',
-    rating: 4.8,
-    reviews: 124,
-    memberSince: 'Jan 2024',
-    bio: 'Licensed Master Electrician with over 15 years of experience in residential and commercial electrical systems. Specializing in smart home integrations, panel upgrades, and emergency troubleshooting. I take pride in clean work and upfront pricing.',
-    skills: ['Electrical', 'Smart Home', 'HVAC Wiring'],
-    gigs: [
-      { id: 1, title: 'Complete AC Unit Installation & Wiring', price: 'starting at $150 BZD', image: 'https://images.unsplash.com/photo-1527689638836-411945a2b57c?auto=format&fit=crop&q=80&w=400&h=300' },
-      { id: 2, title: 'Ceiling Fan Installation (up to 12ft ceiling)', price: '$85 BZD flat rate', image: 'https://images.unsplash.com/photo-1579632863925-5026c2e352f1?auto=format&fit=crop&q=80&w=400&h=300' },
-      { id: 3, title: 'Electrical Panel Inspection & Diagnostics', price: '$50 BZD / hour', image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&q=80&w=400&h=300' }
-    ],
-    portfolio: [
-      'https://images.unsplash.com/photo-1581092921461-eab62e97a780?auto=format&fit=crop&q=80&w=300&h=300',
-      'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=300&h=300',
-      'https://images.unsplash.com/photo-1558227691-41ea78d1f631?auto=format&fit=crop&q=80&w=300&h=300',
-      'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=300&h=300'
-    ]
-  };
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          users (
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (data) {
+        setProfile({
+          ...data,
+          name: data.users?.full_name || 'Anonymous Pro',
+          initials: data.users?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'P',
+          rating: 4.8,
+          reviews: 124,
+          memberSince: new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          gigs: [
+            { id: 1, title: 'Custom Service Request', price: 'Contact for Quote', image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&q=80&w=400&h=300' }
+          ],
+          portfolio: data.portfolio_urls || []
+        });
+      }
+      setLoading(false);
+    };
+
+    fetchProfile();
+  }, [id, supabase]);
+
+  if (loading) return <div style={{ padding: '3rem', textAlign: 'center' }}>Loading profile...</div>;
+  if (!profile) return <div style={{ padding: '3rem', textAlign: 'center' }}>Profile not found</div>;
 
   return (
     <div className="profile-container">
