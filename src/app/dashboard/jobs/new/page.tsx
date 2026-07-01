@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/lib/contexts/ToastContext';
+import { ImageUpload } from '@/components/ImageUpload';
 import { ArrowLeft, Send } from 'lucide-react';
 import Link from 'next/link';
 
@@ -10,6 +12,7 @@ const DISTRICTS = ['Belize', 'Cayo', 'Corozal', 'Orange Walk', 'Stann Creek', 'T
 const CATEGORIES = ['Plumbing', 'Electrical', 'HVAC', 'IT Support', 'Cleaning', 'Other'];
 
 export default function NewJobPage() {
+  const toast = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,6 +22,7 @@ export default function NewJobPage() {
     district: '',
     budget_range: '',
     description: '',
+    photos: [] as string[],
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -46,10 +50,13 @@ export default function NewJobPage() {
 
       if (error) throw error;
 
+      toast('Job posted successfully!', 'success');
       router.push('/dashboard/jobs');
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to post job');
+      const msg = err instanceof Error ? err.message : 'Failed to post job';
+      setError(msg);
+      toast(msg, 'error');
       setLoading(false);
     }
   };
@@ -135,6 +142,15 @@ export default function NewJobPage() {
             value={formData.description}
             onChange={handleChange}
           ></textarea>
+        </div>
+
+        <div className="form-group">
+          <label>Photos of the Problem</label>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>Upload photos to help pros understand the job better.</p>
+          <ImageUpload
+            bucket="jobs"
+            onUploadComplete={(urls) => setFormData(prev => ({ ...prev, photos: urls }))}
+          />
         </div>
 
         <button

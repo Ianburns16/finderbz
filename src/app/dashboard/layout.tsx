@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Users, Briefcase, MessageSquare, Settings, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { NotificationBell } from '@/components/NotificationBell';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import './dashboard.css';
 
 import { User } from '@supabase/supabase-js';
@@ -84,7 +85,9 @@ export default function DashboardLayout({
         </header>
         
         <div className="dashboard-content">
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </div>
       </main>
 

@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadCloud, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/lib/contexts/ToastContext';
 import './onboarding.css';
 import '@/app/auth/auth.css'; // Reuse form styles
 
 type Role = 'tradesman' | 'customer';
 
 export default function OnboardingPage() {
+  const toast = useToast();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<Role>('customer');
@@ -64,7 +66,7 @@ export default function OnboardingPage() {
       router.refresh();
     } catch (err) {
       console.error(err);
-      alert('Error saving profile');
+      toast('Error saving profile', 'error');
     } finally {
       setLoading(false);
     }

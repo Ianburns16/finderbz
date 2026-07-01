@@ -6,10 +6,12 @@ import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, CheckCircle2, ShieldCheck, Star } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { ReviewModal } from '@/components/ReviewModal';
+import { useToast } from '@/lib/contexts/ToastContext';
 import '@/components/components.css';
 import './job-details.css';
 
 export default function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const toast = useToast();
   const { id } = use(params);
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -83,8 +85,9 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
       }]);
 
   setJob((prev: any) => ({ ...prev, status: 'claimed', tradesman_id: user.id }));
+      toast('Job claimed successfully!', 'success');
     } catch (err: any) {
-      alert(err.message || 'Failed to claim job');
+      toast(err.message || 'Failed to claim job', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -100,8 +103,9 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
 
       if (error) throw error;
       setJob((prev: any) => ({ ...prev, status: newStatus }));
+      toast(`Job status updated to ${newStatus}`, 'success');
     } catch (err: any) {
-      alert(err.message || 'Failed to update status');
+      toast(err.message || 'Failed to update status', 'error');
     } finally {
       setActionLoading(false);
     }

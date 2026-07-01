@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { TradesmanCard } from '@/components/TradesmanCard';
 import { Search } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { CardSkeleton } from '@/components/Skeletons';
 import './directory.css';
 
 const CATEGORIES = ['All', 'Plumbing', 'Electrical', 'HVAC', 'IT Support', 'Cleaning'];
@@ -101,17 +102,7 @@ export default function DirectoryPage() {
       {loading ? (
         <div className="card-grid">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="card" style={{ height: '200px', display: 'flex', flexDirection: 'column', gap: '1rem', opacity: 0.6 }}>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'var(--border-color)' }}></div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div style={{ height: '1.2rem', width: '60%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
-                  <div style={{ height: '0.8rem', width: '40%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
-                </div>
-              </div>
-              <div style={{ height: '2rem', width: '100%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
-              <div style={{ height: '3rem', width: '100%', backgroundColor: 'var(--border-color)', borderRadius: 'var(--radius-md)' }}></div>
-            </div>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : filteredTradesmen.length === 0 ? (
