@@ -2,6 +2,7 @@
 
 import { use } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, CheckCircle2, ShieldCheck, Star } from 'lucide-react';
 import '@/components/components.css';
 import './job-details.css';
@@ -87,7 +88,9 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
         <h2>Photos of the Problem</h2>
         <div className="photo-gallery">
           {job.photos.map((url, index) => (
-            <img key={index} src={url} alt={`Job photo ${index + 1}`} className="job-photo" />
+            <div key={index} style={{ position: 'relative', height: '200px', width: '300px' }}>
+              <Image src={url} alt={`Job photo ${index + 1}`} fill style={{ objectFit: 'cover', borderRadius: 'var(--radius-md)' }} />
+            </div>
           ))}
         </div>
       </div>

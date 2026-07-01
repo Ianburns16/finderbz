@@ -2,6 +2,7 @@
 
 import { use } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, MapPin, Star, CheckCircle2, ShieldCheck, Wrench, MessageSquare, Briefcase } from 'lucide-react';
 import './profile.css';
 import '@/components/components.css';
@@ -83,7 +84,9 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
       <div className="gigs-grid">
         {profile.gigs.map(gig => (
           <div key={gig.id} className="gig-card">
-            <img src={gig.image} alt={gig.title} className="gig-image" />
+            <div style={{ position: 'relative', height: '200px', width: '100%' }}>
+              <Image src={gig.image} alt={gig.title} fill style={{ objectFit: 'cover', borderRadius: 'var(--radius-md) var(--radius-md) 0 0' }} />
+            </div>
             <div className="gig-content">
               <h3 className="gig-title">{gig.title}</h3>
               <div className="gig-price">
@@ -98,7 +101,9 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
       <h2 className="section-title"><Wrench size={24} color="var(--primary)" /> Past Work Portfolio</h2>
       <div className="portfolio-grid">
         {profile.portfolio.map((img, i) => (
-          <img key={i} src={img} alt={`Portfolio ${i}`} className="portfolio-item" />
+          <div key={i} style={{ position: 'relative', height: '250px', width: '100%' }}>
+            <Image src={img} alt={`Portfolio ${i}`} fill style={{ objectFit: 'cover', borderRadius: 'var(--radius-md)' }} />
+          </div>
         ))}
       </div>
 

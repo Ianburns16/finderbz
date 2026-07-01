@@ -1,9 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Users, Briefcase, MessageSquare, Settings } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 import './dashboard.css';
+
+import { User } from '@supabase/supabase-js';
 
 export default function DashboardLayout({
   children,
@@ -11,6 +15,20 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [user, setUser] = useState<User | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, [supabase]);
+
+  const initials = user?.user_metadata?.full_name
+    ? (user.user_metadata.full_name as string).split(' ').map((n: string) => n[0]).join('')
+    : (user?.email?.[0]?.toUpperCase() as string) || 'U';
 
   const NAV_ITEMS = [
     { name: 'Directory', href: '/dashboard/directory', icon: <Users size={20} /> },
@@ -42,8 +60,11 @@ export default function DashboardLayout({
         <header className="dashboard-header">
           <div className="mobile-brand">Pro-Finder</div>
           <div className="user-profile-nav">
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Customer View</span>
-            <div className="avatar-placeholder">IB</div>
+            <div className="header-user-info">
+              <span className="user-name">{user?.user_metadata?.full_name || 'User'}</span>
+              <span className="user-role">{user?.user_metadata?.role === 'tradesman' ? 'Pro' : 'Customer'} View</span>
+            </div>
+            <div className="avatar-placeholder">{initials}</div>
           </div>
         </header>
         
