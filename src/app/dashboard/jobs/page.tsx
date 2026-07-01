@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { JobCard } from '@/components/JobCard';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import '../directory/directory.css'; // Reuse filter styles
 
 const CATEGORIES = ['All', 'Plumbing', 'Electrical', 'HVAC', 'IT Support', 'Cleaning'];
@@ -16,10 +18,31 @@ const MOCK_JOBS = [
 
 export default function JobsPage() {
   const [activeCategory, setActiveCategory] = useState('All');
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      const { data } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        setJobs(data);
+      }
+      setLoading(false);
+    };
+
+    fetchJobs();
+  }, [supabase]);
+
+  const displayJobs = jobs.length > 0 ? jobs : MOCK_JOBS;
 
   const filteredJobs = activeCategory === 'All' 
-    ? MOCK_JOBS 
-    : MOCK_JOBS.filter(j => j.category === activeCategory);
+    ? displayJobs
+    : displayJobs.filter(j => j.category === activeCategory);
 
   return (
     <div>
@@ -28,7 +51,7 @@ export default function JobsPage() {
           <h1 className="directory-title">Job Board</h1>
           <p className="directory-subtitle">Find local requests and submit your quotes.</p>
         </div>
-        <button className="btn-primary">Post a New Job</button>
+        <Link href="/dashboard/jobs/new" className="btn-primary">Post a New Job</Link>
       </div>
 
       <div className="filters-bar">
@@ -43,19 +66,23 @@ export default function JobsPage() {
         ))}
       </div>
 
-      <div className="card-grid">
-        {filteredJobs.map(job => (
-          <JobCard 
-            key={job.id}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '3rem' }}>Loading jobs...</div>
+      ) : (
+        <div className="card-grid">
+          {filteredJobs.map(job => (
+            <JobCard
+              key={job.id}
             title={job.title}
             category={job.category}
             budget={job.budget}
             district={job.district}
-            description={job.description}
-            postedAt={job.postedAt}
-          />
-        ))}
-      </div>
+              description={job.description}
+              postedAt={job.created_at ? new Date(job.created_at as string).toLocaleDateString() : (job as any).postedAt}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

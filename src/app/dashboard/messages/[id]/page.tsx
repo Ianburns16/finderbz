@@ -1,127 +1,111 @@
 'use client';
 
-import { use } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { ArrowLeft, Send, Phone, Info } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
-import { ArrowLeft, Send, Camera, DollarSign, ShieldCheck } from 'lucide-react';
-import '../messages.css';
+import './thread.css';
 
-export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const [showQuoteModal, setShowQuoteModal] = useState(false);
-  const [quoteAmount, setQuoteAmount] = useState('');
-  const [inputValue, setInputValue] = useState('');
-  const [messages, setMessages] = useState([
-    { id: 1, sender: 'other', text: 'Hi, I saw your job post about the leaking pipe.' },
-    { id: 2, sender: 'me', text: 'Yes, it is still leaking. Can you fix it today?' },
-    { id: 3, sender: 'other', text: 'I can come by this afternoon around 2 PM. Based on the photos, it looks like a simple P-trap replacement.' },
-  ]);
+import { User } from '@supabase/supabase-js';
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
-    setMessages([...messages, { id: Date.now(), sender: 'me', text: inputValue }]);
-    setInputValue('');
+export default function MessageThreadPage() {
+  const params = useParams();
+  const id = params.id;
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const setup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+
+      // Mock initial messages for demo purposes if no database data yet
+      setMessages([
+        { id: 1, sender_id: 'other', content: 'Hi there! I saw your post about the leaking pipe.', created_at: new Date(Date.now() - 3600000).toISOString() },
+        { id: 2, sender_id: user?.id, content: 'Yes, it is under the kitchen sink. Can you come today?', created_at: new Date(Date.now() - 1800000).toISOString() },
+        { id: 3, sender_id: 'other', content: 'I can be there around 2 PM. My quote is $60.', created_at: new Date(Date.now() - 600000).toISOString() },
+      ]);
+    };
+    setup();
+  }, [supabase]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    const msg = {
+      id: Date.now(),
+      sender_id: user?.id,
+      content: newMessage,
+      created_at: new Date().toISOString()
+    };
+
+    setMessages([...messages, msg]);
+    setNewMessage('');
   };
 
-  const handleSendQuote = () => {
-    if (!quoteAmount) return;
-    setMessages([...messages, { id: Date.now(), sender: 'me', text: `[QUOTE_SENT:${quoteAmount}]` }]);
-    setShowQuoteModal(false);
-    setQuoteAmount('');
-  };
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading conversation...</div>;
 
   return (
-    <div className="chat-container">
-      <div className="chat-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Link href="/dashboard/messages" style={{ color: 'var(--text-main)' }}>
-            <ArrowLeft size={24} />
-          </Link>
-          <div className="chat-title-area">
-            <h2>John Doe (Plumber)</h2>
-            <p>Job: Fix Leaking Pipe under Sink</p>
+    <div className="thread-container">
+      <header className="thread-header">
+        <Link href="/dashboard/messages" className="back-btn">
+          <ArrowLeft size={20} />
+        </Link>
+        <div className="thread-user-info">
+          <div className="thread-avatar">JD</div>
+          <div>
+            <h3>John Doe</h3>
+            <p>Active now</p>
           </div>
         </div>
-        <button 
-          className="btn-primary" 
-          style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}
-          onClick={() => setShowQuoteModal(true)}
-        >
-          <DollarSign size={16} /> Generate Quote
-        </button>
-      </div>
+        <div className="thread-actions">
+          <button title="Call"><Phone size={20} /></button>
+          <button title="Info"><Info size={20} /></button>
+        </div>
+      </header>
 
-      <div className="chat-messages">
-        {messages.map(msg => {
-          if (msg.text.startsWith('[QUOTE_SENT:')) {
-            const amount = msg.text.split(':')[1].replace(']', '');
-            return (
-              <div key={msg.id} className="quote-bubble">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <ShieldCheck size={20} color="var(--primary)" />
-                  <h3 style={{ color: 'var(--primary)', margin: 0 }}>Official Quote</h3>
-                </div>
-                <div className="quote-amount">${amount} BZD</div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                  Funds will be held in Escrow until the job is marked complete. 
-                  You are protected by our Escrow & Payout guarantee.
-                </p>
-                <button className="btn-primary" style={{ width: '100%', backgroundColor: 'var(--success)' }}>
-                  Pay & Lock Job
-                </button>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                  🔒 256-bit encrypted • Escrow protected
-                </p>
-              </div>
-            );
-          }
-          return (
-            <div key={msg.id} className={`chat-bubble ${msg.sender === 'me' ? 'sent' : 'received'}`}>
-              {msg.text}
+      <div className="messages-area" ref={scrollRef}>
+        <div className="escrow-notice">
+          <Info size={16} />
+          <p>Always keep payments within Pro-Finder to stay protected by our Escrow system.</p>
+        </div>
+
+        {messages.map((msg) => (
+          <div key={msg.id} className={`message-bubble-wrapper ${msg.sender_id === user?.id ? 'sent' : 'received'}`}>
+            <div className="message-bubble">
+              {msg.content}
+              <span className="message-time">
+                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
 
-      <div className="chat-input-area">
-        <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', padding: '0.5rem', cursor: 'pointer' }}>
-          <Camera size={24} />
-        </button>
+      <form className="message-input-area" onSubmit={handleSend}>
         <input
           type="text"
-          className="chat-input"
           placeholder="Type a message..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
         />
-        <button className="chat-send-btn" onClick={handleSendMessage}>
+        <button type="submit" disabled={!newMessage.trim()} className="send-btn">
           <Send size={20} />
         </button>
-      </div>
-
-      {showQuoteModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-            <h2 style={{ marginBottom: '1rem' }}>Generate Quote</h2>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-              Enter the final price for this job. Once the customer accepts, the funds will be secured in escrow.
-            </p>
-            <input 
-              type="number" 
-              className="chat-input" 
-              style={{ width: '100%', marginBottom: '1rem', borderRadius: '0.5rem' }} 
-              placeholder="Amount in BZD"
-              value={quoteAmount}
-              onChange={(e) => setQuoteAmount(e.target.value)}
-            />
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowQuoteModal(false)}>Cancel</button>
-              <button className="btn-primary" style={{ flex: 1 }} onClick={handleSendQuote}>Send Quote</button>
-            </div>
-          </div>
-        </div>
-      )}
+      </form>
     </div>
   );
 }
