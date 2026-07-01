@@ -17,7 +17,7 @@ export default function MessagesPage() {
 
       // This is a simplified approach. In a production app, we'd probably have a 'conversations' table.
       // Here we group messages by job_id and participant.
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('messages')
         .select(`
           *,
