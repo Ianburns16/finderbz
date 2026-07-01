@@ -3,10 +3,13 @@
 import { useState, useEffect } from 'react';
 import { User, Shield, Bell, CreditCard, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/lib/contexts/ToastContext';
+import { ImageUpload } from '@/components/ImageUpload';
 import './settings.css';
 import '@/app/auth/auth.css'; // Reusing form classes
 
 export default function SettingsPage() {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -94,9 +97,9 @@ export default function SettingsPage() {
 
       if (profileError) throw profileError;
 
-      alert('Profile updated successfully!');
+      toast('Profile updated successfully!', 'success');
     } catch (err: any) {
-      alert(err.message || 'Failed to update profile');
+      toast(err.message || 'Failed to update profile', 'error');
     } finally {
       setSaving(false);
     }
@@ -175,13 +178,12 @@ export default function SettingsPage() {
           </div>
           {user?.user_metadata?.role === 'tradesman' && (
             <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-              <label>Portfolio Image URLs (comma separated)</label>
-              <textarea
-                className="form-input"
-                value={formData.portfolio_urls.join(', ')}
-                onChange={(e) => setFormData({...formData, portfolio_urls: e.target.value.split(',').map(s => s.trim()).filter(s => s)})}
-                placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                style={{ minHeight: '80px' }}
+              <label>Portfolio Images</label>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>Upload photos of your best work to attract more customers.</p>
+              <ImageUpload
+                bucket="portfolio"
+                maxFiles={10}
+                onUploadComplete={(urls) => setFormData(prev => ({ ...prev, portfolio_urls: urls }))}
               />
             </div>
           )}

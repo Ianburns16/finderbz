@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/lib/contexts/ToastContext';
 import { ArrowLeft, Send, Phone, Info } from 'lucide-react';
 import Link from 'next/link';
 import { QuoteModal } from '@/components/QuoteModal';
@@ -11,6 +12,7 @@ import './thread.css';
 import { User } from '@supabase/supabase-js';
 
 export default function MessageThreadPage() {
+  const toast = useToast();
   const params = useParams();
   const id = params.id as string; // Virtual thread ID: jobId-otherParticipantId
   const [messages, setMessages] = useState<any[]>([]);
@@ -124,6 +126,8 @@ export default function MessageThreadPage() {
       // 2. Send confirmation message
       await handleSend(undefined, `✅ I have accepted your quote of ${amount} and funds are now held in escrow. Please proceed with the work.`);
 
+      toast('Quote accepted and funds held in escrow', 'success');
+
       // 3. Notify tradesman
       await supabase.from('notifications').insert([{
         user_id: otherId,
@@ -135,7 +139,7 @@ export default function MessageThreadPage() {
 
     } catch (err) {
       console.error(err);
-      alert('Failed to accept quote');
+      toast('Failed to accept quote', 'error');
     }
   };
 
@@ -146,6 +150,21 @@ export default function MessageThreadPage() {
 
     if (!overrideContent) setNewMessage(''); // Clear input immediately for UX
 
+    // Optimistic update
+    // eslint-disable-next-line react-hooks/purity
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg = {
+      id: tempId,
+      job_id: jobId,
+      sender_id: user.id,
+      receiver_id: otherId,
+      content: contentToSend,
+      created_at: new Date().toISOString(),
+      is_optimistic: true
+    };
+
+    setMessages(prev => [...prev, optimisticMsg]);
+
     const { data, error } = await supabase.from('messages').insert([{
       job_id: jobId,
       sender_id: user.id,
@@ -155,11 +174,13 @@ export default function MessageThreadPage() {
 
     if (error) {
       console.error('Error sending message:', error);
-      alert('Failed to send message');
+      toast('Failed to send message', 'error');
+      setMessages(prev => prev.filter(m => m.id !== tempId));
     } else if (data) {
       setMessages(prev => {
-        if (prev.some(m => m.id === data.id)) return prev;
-        return [...prev, data];
+        const filtered = prev.filter(m => m.id !== tempId);
+        if (filtered.some(m => m.id === data.id)) return filtered;
+        return [...filtered, data];
       });
     }
   };
@@ -207,7 +228,7 @@ export default function MessageThreadPage() {
 
           return (
             <div key={msg.id} className={`message-bubble-wrapper ${msg.sender_id === user?.id ? 'sent' : 'received'}`}>
-              <div className="message-bubble">
+              <div className="message-bubble" style={{ opacity: msg.is_optimistic ? 0.7 : 1 }}>
                 {msg.content}
 
                 {isQuote && isReceived && isCustomer && (

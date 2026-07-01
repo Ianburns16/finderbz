@@ -5,6 +5,7 @@ import { JobCard } from '@/components/JobCard';
 import Link from 'next/link';
 import { Briefcase } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { CardSkeleton } from '@/components/Skeletons';
 import '../directory/directory.css'; // Reuse filter styles
 
 const CATEGORIES = ['All', 'Plumbing', 'Electrical', 'HVAC', 'IT Support', 'Cleaning'];
@@ -97,18 +98,7 @@ export default function JobsPage() {
       {loading ? (
         <div className="card-grid">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="card" style={{ height: '220px', display: 'flex', flexDirection: 'column', gap: '1rem', opacity: 0.6, borderLeft: '4px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div style={{ height: '1.2rem', width: '60%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
-                <div style={{ height: '1.2rem', width: '20%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
-              </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ height: '0.8rem', width: '30%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
-                <div style={{ height: '0.8rem', width: '30%', backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
-              </div>
-              <div style={{ flex: 1, backgroundColor: 'var(--border-color)', borderRadius: '4px' }}></div>
-              <div style={{ height: '3rem', width: '100%', backgroundColor: 'var(--border-color)', borderRadius: 'var(--radius-md)' }}></div>
-            </div>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : filteredJobs.length === 0 ? (
