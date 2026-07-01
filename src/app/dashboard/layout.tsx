@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Users, Briefcase, MessageSquare, Settings, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { NotificationBell } from '@/components/NotificationBell';
 import './dashboard.css';
 
 import { User } from '@supabase/supabase-js';
@@ -73,7 +74,8 @@ export default function DashboardLayout({
         <header className="dashboard-header">
           <div className="mobile-brand">Pro-Finder</div>
           <div className="user-profile-nav">
-            <div className="header-user-info">
+            <NotificationBell />
+            <div className="header-user-info" style={{ marginLeft: '1rem' }}>
               <span className="user-name">{user?.user_metadata?.full_name || 'User'}</span>
               <span className="user-role">{user?.user_metadata?.role === 'tradesman' ? 'Pro' : 'Customer'} View</span>
             </div>

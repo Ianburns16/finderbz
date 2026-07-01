@@ -5,12 +5,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, MapPin, Star, CheckCircle2, ShieldCheck, Wrench, MessageSquare, Briefcase } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { TradesmanProfile, Review } from '@/lib/types';
 import './profile.css';
 import '@/components/components.css';
 
 export default function TradesmanProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<TradesmanProfile | any>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -29,12 +31,25 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
         .single();
 
       if (data) {
+        // Fetch actual reviews
+        const { data: reviewsData } = await supabase
+          .from('reviews')
+          .select('*, reviewer:users!reviewer_id(full_name)')
+          .eq('reviewee_id', data.user_id)
+          .order('created_at', { ascending: false });
+
+        const avgRating = reviewsData && reviewsData.length > 0
+          ? (reviewsData.reduce((acc, r) => acc + r.rating, 0) / reviewsData.length).toFixed(1)
+          : 'New';
+
+        setReviews(reviewsData || []);
+
         setProfile({
           ...data,
           name: data.users?.full_name || 'Anonymous Pro',
           initials: data.users?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'P',
-          rating: 4.8,
-          reviews: 124,
+          rating: avgRating,
+          reviewCount: reviewsData?.length || 0,
           memberSince: new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
           gigs: [
             { id: 1, title: 'Custom Service Request', price: 'Contact for Quote', image: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&q=80&w=400&h=300' }
@@ -75,7 +90,7 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
               </div>
               <div className="stat-item" style={{ color: '#fbbf24' }}>
                 <Star size={18} fill="currentColor" /> 
-                <span style={{ color: 'var(--text-main)' }}>{profile.rating} ({profile.reviews} reviews)</span>
+                <span style={{ color: 'var(--text-main)' }}>{profile.rating} ({profile.reviewCount} reviews)</span>
               </div>
               <div className="stat-item">
                 <ShieldCheck size={18} /> Background Checked
@@ -90,9 +105,22 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
               ))}
             </div>
 
-            <Link href={`/dashboard/messages/new?tradesmanId=${profile.id}`} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.85rem 2rem' }}>
-              <MessageSquare size={18} /> Message for Custom Quote
-            </Link>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <Link href={`/dashboard/messages/new?tradesmanId=${profile.id}`} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.85rem 2rem' }}>
+                <MessageSquare size={18} /> Message for Custom Quote
+              </Link>
+              {profile.users?.phone_number && (
+                <a
+                  href={`https://wa.me/${profile.users.phone_number.replace(/[^0-9]/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.85rem 2rem', color: '#25D366', borderColor: '#25D366' }}
+                >
+                  <MessageSquare size={18} /> Chat on WhatsApp
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -125,27 +153,41 @@ export default function TradesmanProfilePage({ params }: { params: Promise<{ id:
       </div>
 
       <div className="reviews-section">
-        <h2 className="section-title" style={{ marginBottom: '0.5rem' }}><Star size={24} color="var(--primary)" fill="var(--primary)" /> Reviews ({profile.reviews})</h2>
+        <h2 className="section-title" style={{ marginBottom: '0.5rem' }}><Star size={24} color="var(--primary)" fill="var(--primary)" /> Reviews ({profile.reviewCount})</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', color: 'var(--text-muted)' }}>
           <span style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--text-main)' }}>{profile.rating}</span>
           <div style={{ display: 'flex', color: '#fbbf24' }}>
-            {[...Array(5)].map((_, i: number) => <Star key={i} size={20} fill="currentColor" />)}
+            {[...Array(5)].map((_, i: number) => (
+              <Star key={i} size={20} fill={i < Math.round(Number(profile.rating)) ? "currentColor" : "none"} />
+            ))}
           </div>
         </div>
 
-        <div className="review-card">
-          <div className="review-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>S</div>
-              <span style={{ fontWeight: 600 }}>Sarah Jenkins</span>
+        {reviews.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>No reviews yet for this professional.</p>
+        ) : (
+          reviews.map((r) => (
+            <div key={r.id} className="review-card" style={{ marginBottom: '1rem' }}>
+              <div className="review-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                    {r.reviewer?.full_name?.charAt(0) || 'U'}
+                  </div>
+                  <span style={{ fontWeight: 600 }}>{r.reviewer?.full_name || 'Anonymous'}</span>
+                </div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  {new Date(r.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              <div style={{ display: 'flex', color: '#fbbf24', marginBottom: '0.5rem' }}>
+                {[...Array(5)].map((_, i: number) => (
+                  <Star key={i} size={14} fill={i < r.rating ? "currentColor" : "none"} />
+                ))}
+              </div>
+              <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.95rem' }}>{r.content}</p>
             </div>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>2 weeks ago</span>
-          </div>
-          <div style={{ display: 'flex', color: '#fbbf24', marginBottom: '0.5rem' }}>
-            {[...Array(5)].map((_, i: number) => <Star key={i} size={14} fill="currentColor" />)}
-          </div>
-          <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.95rem' }}>Michael was extremely professional. He quickly diagnosed the issue with our AC wiring and fixed it within the hour. Highly recommended!</p>
-        </div>
+          ))
+        )}
       </div>
     </div>
   );

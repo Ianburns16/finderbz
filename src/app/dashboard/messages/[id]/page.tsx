@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { ArrowLeft, Send, Phone, Info } from 'lucide-react';
 import Link from 'next/link';
+import { QuoteModal } from '@/components/QuoteModal';
 import './thread.css';
 
 import { User } from '@supabase/supabase-js';
@@ -17,6 +18,7 @@ export default function MessageThreadPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [otherUser, setOtherUser] = useState<any>(null);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
@@ -105,6 +107,38 @@ export default function MessageThreadPage() {
     }
   }, [messages]);
 
+  const handleAcceptQuote = async (amount: string) => {
+    if (!user || !jobId || !otherId) return;
+
+    try {
+      // 1. Create transaction record (held in escrow)
+      const numericAmount = parseFloat(amount.replace(/[^0-9.]/g, ''));
+      await supabase.from('transactions').insert([{
+        job_id: jobId,
+        customer_id: user.id,
+        tradesman_id: otherId,
+        amount: numericAmount,
+        status: 'funds_held'
+      }]);
+
+      // 2. Send confirmation message
+      await handleSend(undefined, `✅ I have accepted your quote of ${amount} and funds are now held in escrow. Please proceed with the work.`);
+
+      // 3. Notify tradesman
+      await supabase.from('notifications').insert([{
+        user_id: otherId,
+        title: 'Quote Accepted!',
+        content: `Your quote for the job has been accepted and funds are in escrow.`,
+        type: 'payment',
+        link: `/dashboard/jobs/${jobId}`
+      }]);
+
+    } catch (err) {
+      console.error(err);
+      alert('Failed to accept quote');
+    }
+  };
+
   const handleSend = async (e?: React.FormEvent, overrideContent?: string) => {
     e?.preventDefault();
     const contentToSend = overrideContent || newMessage;
@@ -150,12 +184,7 @@ export default function MessageThreadPage() {
             <button
               className="btn-primary"
               style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', minHeight: 'auto' }}
-              onClick={() => {
-                const quote = prompt('Enter your quote amount (e.g. $100):');
-                if (quote) {
-                  handleSend(undefined, `I would like to offer a quote of ${quote} for this job.`);
-                }
-              }}
+              onClick={() => setShowQuoteModal(true)}
             >
               Send Quote
             </button>
@@ -171,16 +200,38 @@ export default function MessageThreadPage() {
           <p>Always keep payments within Pro-Finder to stay protected by our Escrow system.</p>
         </div>
 
-        {messages.map((msg) => (
-          <div key={msg.id} className={`message-bubble-wrapper ${msg.sender_id === user?.id ? 'sent' : 'received'}`}>
-            <div className="message-bubble">
-              {msg.content}
-              <span className="message-time">
-                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
+        {messages.map((msg) => {
+          const isQuote = msg.content.includes('offer a quote of');
+          const isCustomer = user?.user_metadata?.role === 'customer';
+          const isReceived = msg.sender_id !== user?.id;
+
+          return (
+            <div key={msg.id} className={`message-bubble-wrapper ${msg.sender_id === user?.id ? 'sent' : 'received'}`}>
+              <div className="message-bubble">
+                {msg.content}
+
+                {isQuote && isReceived && isCustomer && (
+                  <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(0,0,0,0.1)', display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      className="btn-primary"
+                      style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', backgroundColor: 'var(--success)', minHeight: 'auto' }}
+                      onClick={() => {
+                        const amountMatch = msg.content.match(/\$[0-9.]+/);
+                        if (amountMatch) handleAcceptQuote(amountMatch[0]);
+                      }}
+                    >
+                      Accept & Pay to Escrow
+                    </button>
+                  </div>
+                )}
+
+                <span className="message-time">
+                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <form className="message-input-area" onSubmit={handleSend}>
@@ -194,6 +245,16 @@ export default function MessageThreadPage() {
           <Send size={20} />
         </button>
       </form>
+
+      {showQuoteModal && (
+        <QuoteModal
+          onClose={() => setShowQuoteModal(false)}
+          onConfirm={(amount) => {
+            handleSend(undefined, `I would like to offer a quote of ${amount} for this job.`);
+            setShowQuoteModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

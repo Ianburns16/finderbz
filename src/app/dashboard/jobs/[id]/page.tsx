@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, MapPin, Clock, CheckCircle2, ShieldCheck, Star } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { ReviewModal } from '@/components/ReviewModal';
 import '@/components/components.css';
 import './job-details.css';
 
@@ -14,6 +15,8 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -42,6 +45,14 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
           customerRating: 4.9,
           postedAt: new Date(data.created_at).toLocaleDateString()
         });
+
+        // Check if reviewed
+        const { count } = await supabase
+          .from('reviews')
+          .select('*', { count: 'exact', head: true })
+          .eq('job_id', id);
+
+        setHasReviewed(count ? count > 0 : false);
       }
       setLoading(false);
     };
@@ -209,13 +220,24 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
         )}
 
         {job.status === 'completed' && isCustomer && (
-          <button
-            className="btn-primary"
-            style={{ flex: 2, backgroundColor: 'var(--success)' }}
-            disabled
-          >
-            Job Completed
-          </button>
+          <div style={{ flex: 2, display: 'flex', gap: '0.5rem' }}>
+            <button
+              className="btn-primary"
+              style={{ flex: 1, backgroundColor: 'var(--success)' }}
+              disabled
+            >
+              Job Completed
+            </button>
+            {!hasReviewed && (
+              <button
+                className="btn-primary"
+                style={{ flex: 1 }}
+                onClick={() => setShowReviewModal(true)}
+              >
+                Leave Review
+              </button>
+            )}
+          </div>
         )}
 
         {job.status !== 'open' && (
@@ -228,6 +250,17 @@ export default function JobDetailsPage({ params }: { params: Promise<{ id: strin
           </Link>
         )}
       </div>
+
+      {showReviewModal && (
+        <ReviewModal
+          job={job}
+          onClose={() => setShowReviewModal(false)}
+          onSuccess={() => {
+            setShowReviewModal(false);
+            setHasReviewed(true);
+          }}
+        />
+      )}
     </div>
   );
 }

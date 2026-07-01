@@ -16,7 +16,8 @@ export default function SettingsPage() {
     full_name: '',
     phone_number: '',
     district: '',
-    bio: ''
+    bio: '',
+    portfolio_urls: [] as string[]
   });
 
   const supabase = createClient();
@@ -38,7 +39,8 @@ export default function SettingsPage() {
             full_name: user.user_metadata.full_name || '',
             phone_number: user.user_metadata.phone_number || '',
             district: profileData.district || '',
-            bio: profileData.bio || ''
+            bio: profileData.bio || '',
+            portfolio_urls: profileData.portfolio_urls || []
           });
 
           // Fetch transactions
@@ -86,7 +88,8 @@ export default function SettingsPage() {
       // 3. Update profiles table
       const { error: profileError } = await supabase.from('profiles').update({
         district: formData.district,
-        bio: formData.bio
+        bio: formData.bio,
+        portfolio_urls: formData.portfolio_urls
       }).eq('user_id', user.id);
 
       if (profileError) throw profileError;
@@ -170,6 +173,18 @@ export default function SettingsPage() {
               style={{ minHeight: '100px' }}
             />
           </div>
+          {user?.user_metadata?.role === 'tradesman' && (
+            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+              <label>Portfolio Image URLs (comma separated)</label>
+              <textarea
+                className="form-input"
+                value={formData.portfolio_urls.join(', ')}
+                onChange={(e) => setFormData({...formData, portfolio_urls: e.target.value.split(',').map(s => s.trim()).filter(s => s)})}
+                placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                style={{ minHeight: '80px' }}
+              />
+            </div>
+          )}
           <div className="form-group" style={{ marginBottom: '1.5rem' }}>
             <label>Email Address</label>
             <input type="email" className="form-input" value={user?.email || ''} disabled style={{ backgroundColor: 'var(--bg-color)', opacity: 0.7 }} />
